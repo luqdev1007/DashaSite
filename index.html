@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Для Даши</title>
+    <style>
+        /* 1. Анимированный градиент */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4, #fad0c4, #ffecd2);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            overflow: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 2. Контейнер для карточки */
+        .card-container {
+            position: relative;
+            width: 85%;
+            max-width: 350px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 25px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+
+        .card-text {
+            color: #4a4a4a;
+            font-size: 1.1rem;
+            line-height: 1.4;
+            min-height: 60px;
+        }
+
+        /* 3. Кнопки переключения */
+        .nav-buttons {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        button {
+            background: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #ff758c;
+            transition: 0.3s;
+        }
+
+        button:disabled { opacity: 0.3; }
+
+        /* 4. Летающие сердечки */
+        .heart {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 20px;
+            animation: float 5s linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-container">
+        <img id="main-img" src="Dasha.jpg" alt="main-img" class="card-image">
+        <div class="card-text" id="caption">Сайт посвящен самой лучшей Даше в мире</div>
+        <div class="nav-buttons">
+            <button id="prevBtn" onclick="changeCard(-1)" disabled>←</button>
+            <button id="nextBtn" onclick="changeCard(1)">→</button>
+        </div>
+    </div>
+
+    <script>
+        const data = [
+            { img: '1.jpeg', text: 'Если бы Даша была местом, то она была бы американскими горками в виде сердечка...' },
+            { img: '2.jpeg', text: 'Если бы Даша была едой, то она была бы жгучим мармеладным перцем...' },
+            { img: '3.jpeg', text: 'Если бы Даша была персонажем, то она однозначно была бы вылитой Ким-Пять-С-Плюсом внешне, а по характеру как Милли из "Адского Босса'},
+            { img: '4.jpeg', text: 'Если бы Даша была песней, то она бы определенно была лично для меня Ed Sheeran - Perfect' },
+            { img: '5.jpeg', text: 'Если бы даша была цветом, то она была бы золотым и белым - самым дорогим и чистым красивым цветом' }
+        ];
+
+        let currentIndex = -1;
+
+        function changeCard(step) {
+            currentIndex += step;
+            
+            // Обновляем контент
+            document.getElementById('main-img').src = data[currentIndex].img;
+            document.getElementById('caption').innerText = data[currentIndex].text;
+
+            // Управление кнопками
+            document.getElementById('prevBtn').disabled = currentIndex === 0;
+            document.getElementById('nextBtn').disabled = currentIndex === data.length - 1;
+        }
+
+        // Создание сердечек
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart');
+            heart.innerHTML = '❤️';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            document.body.appendChild(heart);
+
+            setTimeout(() => heart.remove(), 5000);
+        }
+        setInterval(createHeart, 400);
+    </script>
+</body>
+</html>
