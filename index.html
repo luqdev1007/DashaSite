@@ -1,142 +1,1298 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Для Даши</title>
-    <style>
-        /* 1. Анимированный градиент */
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(45deg, #ff9a9e, #fad0c4, #fad0c4, #ffecd2);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            overflow: hidden;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NYPD — Game Design Document</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Zen+Antique+Soft&family=Syne:wght@400;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+:root {
+  --ink:    #0D0C0A;
+  --paper:  #F2EDE4;
+  --red:    #C8001A;
+  --gold:   #C8930A;
+  --dim:    #8A8070;
+  --rule:   rgba(200,147,10,0.2);
+  --card:   #151410;
+}
 
-        /* 2. Контейнер для карточки */
-        .card-container {
-            position: relative;
-            width: 85%;
-            max-width: 350px;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 25px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            z-index: 10;
-        }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .card-image {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 15px;
-            margin-bottom: 15px;
-        }
+html { scroll-behavior: smooth; }
 
-        .card-text {
-            color: #4a4a4a;
-            font-size: 1.1rem;
-            line-height: 1.4;
-            min-height: 60px;
-        }
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
+  cursor: none;
+}
 
-        /* 3. Кнопки переключения */
-        .nav-buttons {
-            margin-top: 15px;
-            display: flex;
-            justify-content: space-between;
-        }
+/* CUSTOM CURSOR */
+.cursor {
+  position: fixed;
+  width: 12px; height: 12px;
+  background: var(--red);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%,-50%);
+  transition: transform 0.1s, background 0.2s;
+  mix-blend-mode: difference;
+}
 
-        button {
-            background: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            color: #ff758c;
-            transition: 0.3s;
-        }
+/* VERTICAL PROGRESS BAR */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 0;
+  width: 3px;
+  height: 0%;
+  background: linear-gradient(180deg, var(--red), var(--gold));
+  z-index: 1000;
+  transition: height 0.1s;
+}
 
-        button:disabled { opacity: 0.3; }
+/* NAV */
+nav {
+  position: fixed;
+  top: 0; right: 0;
+  padding: 24px 32px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+}
 
-        /* 4. Летающие сердечки */
-        .heart {
-            position: absolute;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 20px;
-            animation: float 5s linear infinite;
-            z-index: 1;
-        }
+.nav-item {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--dim);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.2s;
+  cursor: none;
+}
+.nav-item:hover { color: var(--gold); }
 
-        @keyframes float {
-            0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
-        }
-    </style>
+/* COVER */
+.cover {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+  overflow: hidden;
+}
+
+.cover-left {
+  padding: 80px 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 1;
+}
+
+.cover-right {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* BIG KANJI */
+.cover-kanji {
+  position: absolute;
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 55vw;
+  color: rgba(200,147,10,0.04);
+  line-height: 0.8;
+  top: 50%; left: 50%;
+  transform: translate(-40%, -50%);
+  pointer-events: none;
+  z-index: 0;
+  user-select: none;
+}
+
+.cover-seal {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 120px;
+  color: var(--red);
+  opacity: 0.12;
+  position: relative;
+  z-index: 1;
+}
+
+.doc-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--dim);
+  text-transform: uppercase;
+  margin-bottom: 32px;
+  animation: fadeUp 1s ease both;
+}
+
+.cover-title {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: clamp(48px, 7vw, 96px);
+  line-height: 1.0;
+  color: var(--paper);
+  animation: fadeUp 1s ease 0.1s both;
+}
+
+.cover-title .line-red { color: var(--red); }
+.cover-title .line-gold { color: var(--gold); }
+
+.cover-tagline {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--dim);
+  margin-top: 28px;
+  border-left: 2px solid var(--red);
+  padding-left: 16px;
+  animation: fadeUp 1s ease 0.2s both;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 40px;
+  animation: fadeUp 1s ease 0.3s both;
+}
+
+.badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  padding: 5px 12px;
+  border: 1px solid;
+  text-transform: uppercase;
+}
+.badge-r { border-color: var(--red); color: var(--red); }
+.badge-g { border-color: var(--gold); color: var(--gold); }
+.badge-w { border-color: rgba(242,237,228,0.2); color: var(--dim); }
+
+/* LAYOUT */
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 48px; }
+
+/* SECTION */
+section { padding: 100px 0; border-top: 1px solid var(--rule); }
+
+.sec-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--red);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.sec-title {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: clamp(32px, 5vw, 56px);
+  line-height: 1.1;
+  margin-bottom: 48px;
+}
+
+.sec-title em { font-style: normal; color: var(--gold); }
+
+/* PROSE */
+.prose {
+  max-width: 680px;
+  color: rgba(242,237,228,0.7);
+  font-size: 14px;
+  line-height: 1.9;
+  margin-bottom: 40px;
+}
+
+/* HIGHLIGHT BOX */
+.hbox {
+  border-left: 3px solid var(--gold);
+  padding: 20px 24px;
+  background: rgba(200,147,10,0.05);
+  margin: 32px 0;
+  font-size: 14px;
+  color: rgba(242,237,228,0.8);
+}
+
+.hbox strong { color: var(--gold); }
+
+/* GRID CARDS */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+
+.card {
+  background: var(--card);
+  padding: 32px;
+  position: relative;
+  transition: background 0.2s;
+}
+.card:hover { background: #1c1a16; }
+
+.card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--red);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.card-title {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 22px;
+  color: var(--paper);
+  margin-bottom: 12px;
+}
+
+.card p { font-size: 13px; color: rgba(242,237,228,0.6); line-height: 1.8; }
+
+.card-key {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  padding: 3px 8px;
+  border: 1px solid rgba(0,200,255,0.3);
+  color: #00C8D4;
+  margin: 8px 4px 0 0;
+  letter-spacing: 1px;
+}
+
+/* MECHANIC ENTRY — big layout */
+.mechanic {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 0;
+  border-bottom: 1px solid var(--rule);
+  padding: 32px 0;
+  align-items: start;
+}
+.mechanic:last-child { border-bottom: none; }
+
+.mechanic-num {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 48px;
+  color: rgba(200,147,10,0.2);
+  line-height: 1;
+  padding-top: 4px;
+}
+
+.mechanic-body {}
+
+.mechanic-title {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 24px;
+  color: var(--paper);
+  margin-bottom: 6px;
+}
+
+.mechanic-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.mechanic p { font-size: 13px; color: rgba(242,237,228,0.65); max-width: 620px; line-height: 1.85; }
+
+.mechanic-keys { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Y-AXIS SYSTEM — special */
+.yaxis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px;
+  margin: 32px 0;
+}
+
+.yaxis-cell {
+  background: var(--card);
+  padding: 24px;
+  text-align: center;
+}
+
+.yaxis-arrow {
+  font-size: 40px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.yaxis-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.yaxis-cell p { font-size: 12px; color: rgba(242,237,228,0.55); }
+
+/* COMBO TABLE */
+.combo-entry {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 32px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--rule);
+  align-items: start;
+}
+.combo-entry:last-child { border-bottom: none; }
+
+.combo-name {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 18px;
+  color: var(--paper);
+  margin-bottom: 6px;
+}
+
+.combo-input {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: #00C8D4;
+  letter-spacing: 1px;
+}
+
+.combo-entry p { font-size: 13px; color: rgba(242,237,228,0.6); }
+
+/* LEVEL FLOW */
+.flow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin: 40px 0;
+  overflow-x: auto;
+}
+
+.flow-step {
+  flex: 1;
+  min-width: 130px;
+  background: var(--card);
+  padding: 24px 16px;
+  text-align: center;
+  position: relative;
+}
+
+.flow-step::after {
+  content: '›';
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold);
+  font-size: 20px;
+  z-index: 2;
+  background: var(--ink);
+  padding: 0 4px;
+}
+.flow-step:last-child::after { display: none; }
+
+.flow-n {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 36px;
+  color: rgba(200,0,26,0.25);
+  line-height: 1;
+}
+
+.flow-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin: 6px 0 4px;
+}
+
+.flow-step p { font-size: 11px; color: rgba(242,237,228,0.4); }
+
+/* TIMER TABLE */
+.t-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 24px 0; }
+.t-table th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-align: left;
+  padding: 12px 20px;
+  color: var(--gold);
+  border-bottom: 1px solid var(--rule);
+  background: rgba(200,147,10,0.04);
+}
+.t-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: rgba(242,237,228,0.7);
+}
+.t-plus { color: #4EC9A0; font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
+.t-minus { color: var(--red); font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
+
+/* RANK ROW */
+.rank-row { display: flex; gap: 2px; margin: 32px 0; }
+.rank-item {
+  flex: 1;
+  background: var(--card);
+  padding: 20px;
+  text-align: center;
+}
+.rank-letter {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 40px;
+  line-height: 1;
+}
+.rank-item p { font-size: 11px; color: rgba(242,237,228,0.4); margin-top: 6px; }
+
+/* WORLD */
+.world-entry {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 0;
+  background: var(--card);
+  margin-bottom: 2px;
+  overflow: hidden;
+}
+
+.world-left {
+  padding: 40px 32px;
+  border-right: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.world-jp {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 48px;
+  color: rgba(200,147,10,0.2);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.world-en {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 22px;
+  color: var(--paper);
+  margin-bottom: 4px;
+}
+
+.world-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+.world-right { padding: 40px 32px; }
+.world-right p { font-size: 13px; color: rgba(242,237,228,0.6); margin-bottom: 16px; line-height: 1.85; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(242,237,228,0.35);
+  text-transform: uppercase;
+}
+
+/* ENEMIES */
+.enemy-row {
+  display: grid;
+  grid-template-columns: 220px 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid var(--rule);
+  padding: 24px 0;
+  align-items: start;
+}
+.enemy-row:last-child { border-bottom: none; }
+
+.enemy-name {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 20px;
+  color: var(--paper);
+}
+
+.enemy-type {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--red);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.enemy-row p { font-size: 12px; color: rgba(242,237,228,0.55); line-height: 1.8; padding: 0 16px; }
+.enemy-row .weak { font-size: 12px; color: rgba(242,237,228,0.55); padding: 0 16px; }
+.enemy-row .weak strong { color: var(--gold); }
+
+/* META */
+.meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+
+.meta-card {
+  background: var(--card);
+  padding: 36px;
+}
+
+.meta-icon { font-size: 28px; margin-bottom: 16px; display: block; }
+
+.meta-title {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 22px;
+  color: var(--paper);
+  margin-bottom: 8px;
+}
+
+.meta-card p { font-size: 13px; color: rgba(242,237,228,0.6); line-height: 1.85; }
+
+/* SCOPE TABLE */
+.scope { width: 100%; border-collapse: collapse; }
+.scope th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 3px;
+  text-align: left;
+  padding: 12px 20px;
+  color: var(--gold);
+  border-bottom: 1px solid var(--rule);
+  background: rgba(200,147,10,0.04);
+}
+.scope td {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 13px;
+  color: rgba(242,237,228,0.7);
+  vertical-align: top;
+}
+.scope .yes { color: #4EC9A0; font-family: 'IBM Plex Mono', monospace; }
+.scope .no  { color: var(--dim); font-family: 'IBM Plex Mono', monospace; }
+.scope .maybe { color: var(--gold); font-family: 'IBM Plex Mono', monospace; }
+
+/* TECH */
+.tech-row { display: flex; gap: 2px; flex-wrap: wrap; margin: 24px 0; }
+.tech-item {
+  background: var(--card);
+  padding: 16px 24px;
+  min-width: 160px;
+}
+.tech-cat {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.tech-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  color: var(--paper);
+  font-weight: 700;
+}
+
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  text-align: center;
+}
+.footer-seal {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: 48px;
+  color: rgba(200,147,10,0.15);
+  margin-bottom: 16px;
+}
+footer p {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+/* ANIMATIONS */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .cover { grid-template-columns: 1fr; }
+  .cover-right { display: none; }
+  .cover-left { padding: 80px 32px 60px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .mechanic { grid-template-columns: 1fr; }
+  .mechanic-num { display: none; }
+  .combo-entry { grid-template-columns: 1fr; gap: 8px; }
+  .world-entry { grid-template-columns: 1fr; }
+  .enemy-row { grid-template-columns: 1fr; }
+  .meta-grid { grid-template-columns: 1fr; }
+  .wrap { padding: 0 24px; }
+  nav { display: none; }
+}
+</style>
 </head>
 <body>
 
-    <div class="card-container">
-        <img id="main-img" src="Dasha.jpg" alt="main-img" class="card-image">
-        <div class="card-text" id="caption">Сайт посвящен самой лучшей Даше в мире</div>
-        <div class="nav-buttons">
-            <button id="prevBtn" onclick="changeCard(-1)" disabled>←</button>
-            <button id="nextBtn" onclick="changeCard(1)">→</button>
-        </div>
+<div class="cursor" id="cursor"></div>
+<div class="progress-bar" id="progress"></div>
+
+<nav>
+  <a href="#concept" class="nav-item">概念 Concept</a>
+  <a href="#mechanics" class="nav-item">力学 Mechanics</a>
+  <a href="#yaxis" class="nav-item">軸 Y-Axis</a>
+  <a href="#combos" class="nav-item">技 Combos</a>
+  <a href="#timer" class="nav-item">時間 Timer</a>
+  <a href="#levels" class="nav-item">世界 Worlds</a>
+  <a href="#enemies" class="nav-item">敵 Enemies</a>
+  <a href="#meta" class="nav-item">メタ Meta</a>
+  <a href="#scope" class="nav-item">範囲 Scope</a>
+</nav>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-kanji">忍</div>
+  <div class="cover-left">
+    <div class="doc-meta">// GDD · v0.1 · Solo Dev · Web Platform · 2025</div>
+    <h1 class="cover-title">
+      <span class="line-red">NINJA</span><br>
+      YAKUZA<br>
+      <span class="line-gold">PIZZA</span><br>
+      DELIVERY
+    </h1>
+    <div class="cover-tagline">
+      忍者組 ピザ配達<br>
+      2D TURBO PLATFORMER · SPEEDRUN · MOMENTUM
     </div>
+    <div class="badges">
+      <span class="badge badge-r">2D Platform</span>
+      <span class="badge badge-g">Speedrun</span>
+      <span class="badge badge-g">Momentum</span>
+      <span class="badge badge-w">Unity → Web</span>
+      <span class="badge badge-w">Solo Dev</span>
+      <span class="badge badge-w">3–5 lvl MVP</span>
+    </div>
+  </div>
+  <div class="cover-right">
+    <div class="cover-seal">忍</div>
+  </div>
+</div>
 
-    <script>
-        const data = [
-            { img: '1.jpeg', text: 'Если бы Даша была местом, то она была бы американскими горками в виде сердечка...' },
-            { img: '2.jpeg', text: 'Если бы Даша была едой, то она была бы жгучим мармеладным перцем...' },
-            { img: '3.jpeg', text: 'Если бы Даша была персонажем, то она однозначно была бы вылитой Ким-Пять-С-Плюсом внешне, а по характеру как Милли из "Адского Босса'},
-            { img: '4.jpeg', text: 'Если бы Даша была песней, то она бы определенно была лично для меня Ed Sheeran - Perfect' },
-            { img: '5.jpeg', text: 'Если бы даша была цветом, то она была бы золотым и белым - самым дорогим и чистым красивым цветом' }
-        ];
+<!-- 01 CONCEPT -->
+<section id="concept">
+<div class="wrap">
+  <div class="sec-eyebrow">// 01 — 概念</div>
+  <h2 class="sec-title">Core <em>Concept</em></h2>
 
-        let currentIndex = -1;
+  <div class="prose">
+    Рюичи — курьер пиццерии «Хот Катана», которая служит прикрытием для клана Якудза. Эпоха: феодальная Япония с нино-панк эстетикой. Каждая доставка — секретная миссия. Каждая секунда промедления стоит репутации клана.
+  </div>
 
-        function changeCard(step) {
-            currentIndex += step;
-            
-            // Обновляем контент
-            document.getElementById('main-img').src = data[currentIndex].img;
-            document.getElementById('caption').innerText = data[currentIndex].text;
+  <div class="hbox">
+    <strong>Core Fantasy:</strong> Игрок — городской призрак. Движение = оружие. Каждый прыжок, удар, бросок кунай — не отдельное действие, а звено в цепи моментума. Уровень — не препятствие, а инструмент. Враги — не стены, а трамплины.
+  </div>
 
-            // Управление кнопками
-            document.getElementById('prevBtn').disabled = currentIndex === 0;
-            document.getElementById('nextBtn').disabled = currentIndex === data.length - 1;
-        }
+  <div class="grid-3" style="margin-top:40px">
+    <div class="card">
+      <div class="card-label">Жанр</div>
+      <div class="card-title">2D Turbo Platformer</div>
+      <p>Action-платформер с акцентом на скоростное прохождение уровней. Ближайшие референсы по feel: Celeste (движение), Katana ZERO (импакт), Mark of the Ninja (стелс-момент).</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Платформа</div>
+      <div class="card-title">Web (Browser)</div>
+      <p>Unity WebGL билд. Приоритет на мгновенный старт без установки. Оптимизация под 60fps в браузере. Управление: клавиатура + геймпад.</p>
+    </div>
+    <div class="card">
+      <div class="card-label">MVP Scope</div>
+      <div class="card-title">3–5 уровней</div>
+      <p>Прототип для проверки core-механик. Один мир (Shibuya-inspired). Полный набор движения, базовые враги, таймер-система, лидерборд.</p>
+    </div>
+  </div>
 
-        // Создание сердечек
-        function createHeart() {
-            const heart = document.createElement('div');
-            heart.classList.add('heart');
-            heart.innerHTML = '❤️';
-            heart.style.left = Math.random() * 100 + 'vw';
-            heart.style.animationDuration = (Math.random() * 3 + 2) + 's';
-            document.body.appendChild(heart);
+  <div style="margin-top:40px">
+    <div class="sec-eyebrow">// GAME LOOP</div>
+  </div>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-n">01</div>
+      <div class="flow-name">Брифинг</div>
+      <p>Диалог, цель доставки, маршрут</p>
+    </div>
+    <div class="flow-step">
+      <div class="flow-n">02</div>
+      <div class="flow-name">Старт</div>
+      <p>Таймер запущен. Уровень открыт</p>
+    </div>
+    <div class="flow-step">
+      <div class="flow-n">03</div>
+      <div class="flow-name">Прорыв</div>
+      <p>Движение + боёвка + интерактив</p>
+    </div>
+    <div class="flow-step">
+      <div class="flow-n">04</div>
+      <div class="flow-name">Доставка</div>
+      <p>Достичь точки до истечения времени</p>
+    </div>
+    <div class="flow-step">
+      <div class="flow-n">05</div>
+      <div class="flow-name">Ранг</div>
+      <p>S/A/B/C оценка + лидерборд</p>
+    </div>
+    <div class="flow-step">
+      <div class="flow-n">06</div>
+      <div class="flow-name">Мета</div>
+      <p>Прокачка, боты, следующий уровень</p>
+    </div>
+  </div>
+</div>
+</section>
 
-            setTimeout(() => heart.remove(), 5000);
-        }
-        setInterval(createHeart, 400);
-    </script>
+<!-- 02 MECHANICS -->
+<section id="mechanics">
+<div class="wrap">
+  <div class="sec-eyebrow">// 02 — 力学</div>
+  <h2 class="sec-title">Арсенал <em>Героя</em></h2>
+
+  <div class="prose">
+    Боёвка здесь не самоцель — каждое действие одновременно является инструментом перемещения. Убил врага — получил трамплин. Бросил кунай — получил точку притяжения. Система строится вокруг одного принципа: <strong>моментум никогда не прерывается</strong>.
+  </div>
+
+  <div class="mechanic">
+    <div class="mechanic-num">①</div>
+    <div class="mechanic-body">
+      <div class="mechanic-sub">Movement</div>
+      <div class="mechanic-title">Прыжок / Двойной прыжок</div>
+      <p>Вариативная высота в зависимости от удержания кнопки. Второй прыжок доступен в воздухе с кувырком. Wall-jump от вертикальных поверхностей. <strong>Ключевое:</strong> двойной прыжок обновляется при попадании атаки по голове врага (кроме шипастых). Позволяет строить бесконечные воздушные цепочки через головы противников.</p>
+      <div class="mechanic-keys">
+        <span class="card-key">SPACE</span>
+        <span class="card-key">SPACE × 2</span>
+        <span class="card-key">↑ + WALL</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mechanic">
+    <div class="mechanic-num">②</div>
+    <div class="mechanic-body">
+      <div class="mechanic-sub">Movement</div>
+      <div class="mechanic-title">Дэш / Рывок</div>
+      <p>Горизонтальный рывок с кратковременной неуязвимостью. В воздухе — воздушный дэш (меняет направление вектора). При рывке сквозь врага — наносит урон и сохраняет скорость. Кулдаун сбрасывается при приземлении.</p>
+      <div class="mechanic-keys">
+        <span class="card-key">SHIFT</span>
+        <span class="card-key">↔ + SHIFT</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mechanic">
+    <div class="mechanic-num">③</div>
+    <div class="mechanic-body">
+      <div class="mechanic-sub">Movement + Combat</div>
+      <div class="mechanic-title">Кунай / Верёвка / Гарпун</div>
+      <p>Три режима в одном: <br>
+      <strong>Гарпун к точке</strong> — кунай цепляется за уступ или стену, игрок притягивается к нему с инерцией маятника. Отпустить в нужный момент = баллистический прыжок с сохранением скорости.<br>
+      <strong>Гарпун к врагу</strong> — притягивает летящего/стоящего врага к игроку ИЛИ притягивает игрока к врагу (переключается кнопкой). При подлёте — автоудар с усилением от моментума.<br>
+      <strong>Бросок-снаряд</strong> — летит по дуге, оглушает при попадании в голову на 2 секунды.</p>
+      <div class="mechanic-keys">
+        <span class="card-key">RMB / Q</span>
+        <span class="card-key">Q + CTRL = реверс</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mechanic">
+    <div class="mechanic-num">④</div>
+    <div class="mechanic-body">
+      <div class="mechanic-sub">Movement + Combat</div>
+      <div class="mechanic-title">Ближний бой</div>
+      <p>Быстрая атака ближнего радиуса. При ударе по врагу — игрок получает отскок в противоположном направлении от удара (как от стены). Это ключевой инструмент изменения вектора в воздухе без потери скорости. Удар снизу-вверх (во время прыжка вниз) = slam, враг улетает вверх + игрок подбрасывается.</p>
+      <div class="mechanic-keys">
+        <span class="card-key">LMB / Z</span>
+        <span class="card-key">↓ + Z = Slam</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mechanic">
+    <div class="mechanic-num">⑤</div>
+    <div class="mechanic-body">
+      <div class="mechanic-sub">Movement</div>
+      <div class="mechanic-title">Скольжение / Паркур</div>
+      <p>Слайд при беге — снижает хитбокс, сохраняет скорость, можно скользить под низкими препятствиями. При переходе в прыжок из слайда — бонус к дальности прыжка. Wall-slide — медленное скольжение по стене с возможностью оттолкнуться. На наклонных поверхностях — автоускорение вниз.</p>
+      <div class="mechanic-keys">
+        <span class="card-key">↓ + RUN</span>
+        <span class="card-key">↑ + WALL</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mechanic">
+    <div class="mechanic-num">⑥</div>
+    <div class="mechanic-body">
+      <div class="mechanic-sub">Special</div>
+      <div class="mechanic-title">Дымовая бомба</div>
+      <p>Создаёт облако на 3 секунды. Скрывает от врагов, блокирует лазерные сенсоры, замедляет снаряды пролетающие сквозь. Ограниченный запас (1–3 в зависимости от уровня). В облаке дыма движение героя не производит звука — агрессивные враги теряют цель.</p>
+      <div class="mechanic-keys">
+        <span class="card-key">E</span>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- 03 Y-AXIS -->
+<section id="yaxis">
+<div class="wrap">
+  <div class="sec-eyebrow">// 03 — 軸</div>
+  <h2 class="sec-title">Y-Axis <em>System</em></h2>
+
+  <div class="prose">
+    Ключевая уникальная механика игры. Действия героя меняются в зависимости от направления и скорости движения по оси Y. Это создаёт физически читаемую боёвку, где каждое действие логично вытекает из состояния движения.
+  </div>
+
+  <div class="yaxis-grid">
+    <div class="yaxis-cell">
+      <span class="yaxis-arrow">⬆️</span>
+      <div class="yaxis-name">Движение вверх</div>
+      <p>Апперкот при ударе — враг улетает вверх, игрок получает дополнительный импульс. Кунай при броске вверх = дальше летит. Прыжок на ускорении = выше.</p>
+    </div>
+    <div class="yaxis-cell" style="background:#1a1714">
+      <span class="yaxis-arrow">⏸️</span>
+      <div class="yaxis-name">Нейтраль / земля</div>
+      <p>Стандартные атаки с горизонтальным нокбэком. Слайд доступен. Базовый бросок кунай. Накопление разгона для следующего прыжка.</p>
+    </div>
+    <div class="yaxis-cell">
+      <span class="yaxis-arrow">⬇️</span>
+      <div class="yaxis-name">Падение / движение вниз</div>
+      <p>Slam-удар при атаке вниз — AoE волна при приземлении, чем выше падение, тем шире волна. Обновление двойного прыжка при попадании по голове врага. Скорость падения = урон slam.</p>
+    </div>
+  </div>
+
+  <div class="hbox">
+    <strong>Скорость влияет на урон:</strong> Чем быстрее герой движется в момент удара (по любой оси) — тем сильнее нокбэк врага и выше отскок самого героя. Максимальный моментум = максимальная дальность полёта после удара. Это стимулирует игрока постоянно поддерживать скорость.
+  </div>
+
+  <div class="hbox">
+    <strong>Кунай + притяжение + удар:</strong> Подтянуться гарпуном к летящему врагу → скорость сближения = скорость падения → slam в голову при контакте → обновление double jump → оттолкнуться и использовать второй прыжок уже в воздухе. Полная цепочка без касания земли.
+  </div>
+</div>
+</section>
+
+<!-- 04 COMBOS -->
+<section id="combos">
+<div class="wrap">
+  <div class="sec-eyebrow">// 04 — 技</div>
+  <h2 class="sec-title">Movement <em>Combos</em></h2>
+
+  <div class="prose">
+    Комбо не требуют заучивания — они вытекают из физики. Опытный игрок обнаруживает их органически. Ниже — задокументированные цепочки для level design и балансировки.
+  </div>
+
+  <div class="combo-entry">
+    <div>
+      <div class="combo-name">Голова-рикошет</div>
+      <div class="combo-input">JUMP → ↓ATTACK на голову → JUMP</div>
+    </div>
+    <p>Базовое обновление double-jump через врага. Позволяет прыгать по цепочке голов через всю комнату. Шипастые враги разрушают цепочку — они запрещённый элемент в этом паттерне. Основа для большинства speedrun маршрутов.</p>
+  </div>
+
+  <div class="combo-entry">
+    <div>
+      <div class="combo-name">Кунай-маятник</div>
+      <div class="combo-input">JUMP → KUNAI (стена) → раскачка → RELEASE</div>
+    </div>
+    <p>Кунай в стену, раскачка на верёвке с набором скорости, отпустить в верхней точке = баллистический запуск. Инерция сохраняется полностью. Позволяет перепрыгивать огромные горизонтальные секции без платформ.</p>
+  </div>
+
+  <div class="combo-entry">
+    <div>
+      <div class="combo-name">Гарпун-трамплин</div>
+      <div class="combo-input">KUNAI (враг) → притяжение → SLAM → JUMP</div>
+    </div>
+    <p>Гарпун к врагу → притянуться к нему → в момент контакта slam вниз → враг летит вниз, игрок отскакивает вверх + обновляет double jump. Если враг летит в других врагов — можно продолжить цепочку.</p>
+  </div>
+
+  <div class="combo-entry">
+    <div>
+      <div class="combo-name">Слайд-запуск</div>
+      <div class="combo-input">RUN → SLIDE → JUMP в конце</div>
+    </div>
+    <p>Скольжение сохраняет скорость бега и добавляет бонус к дистанции прыжка при переходе. Идеально для длинных горизонтальных секций с зазорами. Основной способ пройти через группу врагов без боя.</p>
+  </div>
+
+  <div class="combo-entry">
+    <div>
+      <div class="combo-name">Воздушный реверс</div>
+      <div class="combo-input">AIR DASH → KUNAI (обратное направление)</div>
+    </div>
+    <p>Воздушный дэш вперёд → в воздухе гарпун назад в стену → резкое изменение направления без потери скорости. Позволяет огибать препятствия и уходить от снарядов с сохранением моментума.</p>
+  </div>
+
+  <div class="combo-entry">
+    <div>
+      <div class="combo-name">Slam-волна</div>
+      <div class="combo-input">Высокое падение → ↓ATTACK у земли</div>
+    </div>
+    <p>Чем выше падение, тем больше AoE волна при slam. С максимальной высоты волна накрывает всю маленькую комнату. Отдельные уровни будут содержать секции, спроектированные специально под этот приём.</p>
+  </div>
+</div>
+</section>
+
+<!-- 05 TIMER -->
+<section id="timer">
+<div class="wrap">
+  <div class="sec-eyebrow">// 05 — 時間</div>
+  <h2 class="sec-title">Timer <em>System</em></h2>
+
+  <div class="prose">
+    Таймер — не просто ограничение, а основная игровая валюта. Время можно выигрывать и терять. Это создаёт постоянное напряжение без хардкорного punishment — можно рискнуть и заработать время, или сыграть осторожно и потерять.
+  </div>
+
+  <table class="t-table">
+    <thead>
+      <tr><th>Событие</th><th>Изменение времени</th><th>Примечание</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>🎯 Устранение врага комбо (2+ подряд)</td><td class="t-plus">+2s</td><td>Каждый враг в цепочке</td></tr>
+      <tr><td>🔑 Секретный маршрут / шорткат</td><td class="t-plus">+5s</td><td>Триггер при входе</td></tr>
+      <tr><td>⚡ Активировать буст-пад</td><td class="t-plus">+1s</td><td>Интерактивный элемент</td></tr>
+      <tr><td>🍕 Доставка без повреждений пиццы</td><td class="t-plus">+5s бонус к рангу</td><td>Влияет только на ранг</td></tr>
+      <tr><td>💥 Получить урон</td><td class="t-minus">−3s</td><td>За каждый хит</td></tr>
+      <tr><td>🚨 Тревога активна</td><td class="t-minus">−2s/сек</td><td>Пока не погасишь</td></tr>
+      <tr><td>☠️ Смерть → чекпоинт</td><td class="t-minus">−10s</td><td>Возрождение на чекпоинте</td></tr>
+      <tr><td>🍕 Урон по пицце (бросить / упасть)</td><td class="t-minus">−5s при доставке</td><td>Пицца в термосе, не руках</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec-eyebrow" style="margin-top:40px">// RANK СИСТЕМА</div>
+  <div class="rank-row">
+    <div class="rank-item">
+      <div class="rank-letter" style="color:var(--gold)">S</div>
+      <p>Осталось &gt;40% времени + no damage</p>
+    </div>
+    <div class="rank-item">
+      <div class="rank-letter" style="color:#aaa">A</div>
+      <p>Осталось &gt;25% времени</p>
+    </div>
+    <div class="rank-item">
+      <div class="rank-letter" style="color:var(--red)">B</div>
+      <p>Доставлено вовремя, с уроном</p>
+    </div>
+    <div class="rank-item">
+      <div class="rank-letter" style="color:var(--dim)">C</div>
+      <p>Почти не успел, пицца помята</p>
+    </div>
+    <div class="rank-item">
+      <div class="rank-letter" style="color:#444">D</div>
+      <p>Провал. Клан недоволен.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- 06 WORLDS -->
+<section id="levels">
+<div class="wrap">
+  <div class="sec-eyebrow">// 06 — 世界</div>
+  <h2 class="sec-title">Уровни <em>MVP</em></h2>
+
+  <div class="prose">
+    MVP — 3–5 уровней в одном мире. Стилистика: феодальная Япония времён ниндзей, лоу-поли мультяшная эстетика. Каждый уровень вводит новую механику взаимодействия со средой.
+  </div>
+
+  <div class="world-entry">
+    <div class="world-left">
+      <div class="world-jp">一</div>
+      <div class="world-en">Рынок Эдо</div>
+      <div class="world-sub">Lvl 01 · Tutorial</div>
+    </div>
+    <div class="world-right">
+      <p>Дневной рынок, торговые ряды, низкие крыши, толпа. Обучающий уровень — широкие переходы, редкие враги, видимые маршруты. Вводит: бег, прыжок, кунай, первый патруль.</p>
+      <div class="tags">
+        <span class="tag">Фонарные столбы</span>
+        <span class="tag">Толпа (замедляет)</span>
+        <span class="tag">Бамбуковые навесы</span>
+        <span class="tag">1 патруль</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="world-entry">
+    <div class="world-left">
+      <div class="world-jp">二</div>
+      <div class="world-en">Крыши замка</div>
+      <div class="world-sub">Lvl 02 · Vertical</div>
+    </div>
+    <div class="world-right">
+      <p>Черепичные крыши, уступы, вертикальная секция с wall-jump. Вводит: двойной прыжок, слайд, первый патруль с алертом. Ночное время — дроны-фонарщики по паттерну.</p>
+      <div class="tags">
+        <span class="tag">Wall-jump секция</span>
+        <span class="tag">Скользкие крыши (дождь)</span>
+        <span class="tag">Фонарщик-дрон</span>
+        <span class="tag">Скрытый проход</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="world-entry">
+    <div class="world-left">
+      <div class="world-jp">三</div>
+      <div class="world-en">Подземный канал</div>
+      <div class="world-sub">Lvl 03 · Combat</div>
+    </div>
+    <div class="world-right">
+      <p>Тёмные водные каналы под городом. Узкие коридоры, много вертикали. Вводит: боёвку как транспорт, цепочку прыжков по головам, slam-волну. 2–3 типа врагов одновременно.</p>
+      <div class="tags">
+        <span class="tag">Водный поток (сносит)</span>
+        <span class="tag">Бочки-взрывчатки</span>
+        <span class="tag">Темнота (дымовая бомба)</span>
+        <span class="tag">Цепочка голов ×5</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="world-entry">
+    <div class="world-left">
+      <div class="world-jp">四</div>
+      <div class="world-en">Башня Якудзы</div>
+      <div class="world-sub">Lvl 04 · Mixed</div>
+    </div>
+    <div class="world-right">
+      <p>Внутри деревянной башни — лестницы, движущиеся платформы-лифты, охрана. Вводит: гарпун-комбо с врагами, первый мини-босс (Охранник Ямато). Проверка всех механик вместе.</p>
+      <div class="tags">
+        <span class="tag">Лифт-платформы</span>
+        <span class="tag">Мини-босс</span>
+        <span class="tag">Сигнальный барабан (тревога)</span>
+        <span class="tag">Гарпун-маршрут</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="world-entry">
+    <div class="world-left">
+      <div class="world-jp">五</div>
+      <div class="world-en">Мост через пропасть</div>
+      <div class="world-sub">Lvl 05 · Speed</div>
+    </div>
+    <div class="world-right">
+      <p>Длинная горизонтальная секция с минимумом платформ. Кунай-маятники обязательны. Погоня — Ниндзя-соперник преследует с секунды 0. Финальная проверка скорости и всех механик.</p>
+      <div class="tags">
+        <span class="tag">Обрыв (мгновенная смерть)</span>
+        <span class="tag">Ниндзя-преследователь</span>
+        <span class="tag">Ветер (влияет на прыжок)</span>
+        <span class="tag">Speedrun-секция</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:40px">
+    <div class="sec-eyebrow">// ИНТЕРАКТИВНЫЕ ЭЛЕМЕНТЫ УРОВНЯ</div>
+    <div class="grid-2" style="margin-top:24px">
+      <div class="card">
+        <div class="card-label">Movement</div>
+        <div class="card-title">🏮 Фонарный столб</div>
+        <p>Раскачка на цепи — физика маятника. Набери скорость и улети. Обязателен для некоторых секций — без раскачки не перепрыгнуть.</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Hazard / Boost</div>
+        <div class="card-title">💨 Воздушный поток</div>
+        <p>Снизу — подбрасывает вверх (буст). Сбоку — сносит. В паре с кунаем создаёт комбо-маршруты.</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Shortcut</div>
+        <div class="card-title">🪟 Бумажные стены (сёдзи)</div>
+        <p>Пробиваются при спринте. Скрытые комнаты, срезки через здания. Всегда даёт бонусное время.</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Hazard</div>
+        <div class="card-title">🥷 Сигнальный барабан</div>
+        <p>Если враг добирается до него и бьёт — тревога. Уничтожить кунаем или опередить. Таймер тревоги сжигает секунды.</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Environment</div>
+        <div class="card-title">💣 Пороховые бочки</div>
+        <p>Кунай → детонация → цепная реакция. Убивает врагов в радиусе + разрушает стены + подбрасывает героя если он в зоне.</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Secret</div>
+        <div class="card-title">🐈 Кошка клана</div>
+        <p>Редкий NPC. Взаимодействие → ведёт к секретному ходу (+5s и альтернативный маршрут). Убегает через 2 секунды.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- 07 ENEMIES -->
+<section id="enemies">
+<div class="wrap">
+  <div class="sec-eyebrow">// 07 — 敵</div>
+  <h2 class="sec-title">Бестиарий <em>MVP</em></h2>
+
+  <div class="enemy-row" style="border-top:1px solid var(--rule)">
+    <div>
+      <div class="enemy-name">Патруль-Гэнин</div>
+      <div class="enemy-type">Patrol · Базовый</div>
+    </div>
+    <p>Ходит по маршруту, конус зрения. При контакте — тревога. Медленная реакция. Идеален для головы-рикошет цепочки. Slam сверху = мгновенное устранение.</p>
+    <div class="weak"><strong>Слабость:</strong> Удар по голове, slam, кунай в затылок. Пицца в лицо = 3с слепоты.</div>
+  </div>
+
+  <div class="enemy-row">
+    <div>
+      <div class="enemy-name">Лучник-Кюдока</div>
+      <div class="enemy-type">Ranged · Дальний</div>
+    </div>
+    <p>Стоит на позиции, стреляет стрелами с паузой. Долгая перезарядка. Мёртвая зона снизу — не видит под собой. Стрелы можно отбить ударом в воздухе.</p>
+    <div class="weak"><strong>Слабость:</strong> Зайти снизу + комбо. Дымовая бомба = потеря цели навсегда (убегает).</div>
+  </div>
+
+  <div class="enemy-row">
+    <div>
+      <div class="enemy-name">Броня-Самурай</div>
+      <div class="enemy-type">Tank · Тяжёлый</div>
+    </div>
+    <p>Медленно идёт, не реагирует на обычный удар спереди. Блокирует узкие проходы. Атакует мечом широким замахом. При атаке сзади — уязвим и падает шумно.</p>
+    <div class="weak"><strong>Слабость:</strong> Кунай в спину, взрыв бочки рядом. Slam сверху = оглушение на 3с.</div>
+  </div>
+
+  <div class="enemy-row">
+    <div>
+      <div class="enemy-name">Дрон-Фонарщик</div>
+      <div class="enemy-type">Aerial · Воздушный</div>
+    </div>
+    <p>Летит по паттерну, луч фонаря. Тревога при обнаружении. Взрывается с задержкой при уничтожении — можно использовать как мину для соседних врагов.</p>
+    <div class="weak"><strong>Слабость:</strong> Кунай × 1 = уничтожен (+1s бонус). Дымовая бомба = слепой на 5с.</div>
+  </div>
+
+  <div class="enemy-row">
+    <div>
+      <div class="enemy-name">Ниндзя-Соперник</div>
+      <div class="enemy-type">Elite · Преследователь</div>
+    </div>
+    <p>Появляется в Level 5. Использует те же механики что и игрок — wall-jump, двойной прыжок, дэш. Преследует непрерывно. Если догоняет — большой штраф по времени. Не умирает, только временно останавливается.</p>
+    <div class="weak"><strong>Слабость:</strong> Дымовая бомба = 8с стопа. Slam в голову = откидывает далеко назад.</div>
+  </div>
+</div>
+</section>
+
+<!-- 08 META -->
+<section id="meta">
+<div class="wrap">
+  <div class="sec-eyebrow">// 08 — メタ</div>
+  <h2 class="sec-title">Мета <em>Геймплей</em></h2>
+
+  <div class="meta-grid">
+    <div class="meta-card">
+      <span class="meta-icon">🏆</span>
+      <div class="meta-title">Лидерборд</div>
+      <p>Таблица лучших времён по каждому уровню. Глобальная + локальная (среди друзей). Ранг обновляется при каждом прохождении. Основной реиграбельности-крючок для speedrun-аудитории.</p>
+    </div>
+    <div class="meta-card">
+      <span class="meta-icon">⚔️</span>
+      <div class="meta-title">Прокачка героя</div>
+      <p>Между уровнями — выбор 1 из 3 апгрейдов. Не RPG-прокачка, а одноразовые модификаторы. Примеры: «+1 дымовая бомба», «дэш сбрасывает кулдаун при убийстве», «slam-волна шире». Сбрасывается между сессиями.</p>
+    </div>
+    <div class="meta-card">
+      <span class="meta-icon">🥷</span>
+      <div class="meta-title">ИИ-Боты (Сайд)</div>
+      <p>Нанять ботов-курьеров клана. Дать имя, снарядить. Отправить на авто-миссию. Боты периодически смешно фейлят на упрощённых версиях уровней. Можно смотреть «запись» их провалов. Никак не блокирует основной прогресс.</p>
+    </div>
+    <div class="meta-card">
+      <span class="meta-icon">📜</span>
+      <div class="meta-title">Нарратив между уровнями</div>
+      <p>Короткие диалоги (2–4 реплики) в стиле визуальной новеллы. Рюичи и персонажи клана. Раскрывают что в коробке с пиццей. Тон: абсурдный юмор + якудза-серьёзность. Не блокирует геймплей.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- 09 SCOPE -->
+<section id="scope">
+<div class="wrap">
+  <div class="sec-eyebrow">// 09 — 範囲</div>
+  <h2 class="sec-title">Scope & <em>Tech</em></h2>
+
+  <div class="sec-eyebrow" style="margin-bottom:16px">// ТЕХНИЧЕСКИЙ СТЕК</div>
+  <div class="tech-row">
+    <div class="tech-item"><div class="tech-cat">Engine</div><div class="tech-val">Unity</div></div>
+    <div class="tech-item"><div class="tech-cat">Платформа</div><div class="tech-val">WebGL</div></div>
+    <div class="tech-item"><div class="tech-cat">Физика</div><div class="tech-val">Rigidbody 2D</div></div>
+    <div class="tech-item"><div class="tech-cat">Арт-стиль</div><div class="tech-val">Low-poly 2D</div></div>
+    <div class="tech-item"><div class="tech-cat">Тема</div><div class="tech-val">Феод. Япония</div></div>
+    <div class="tech-item"><div class="tech-cat">Команда</div><div class="tech-val">Solo Dev</div></div>
+  </div>
+
+  <div class="sec-eyebrow" style="margin-top:48px;margin-bottom:16px">// SCOPE ТАБЛИЦА MVP</div>
+  <table class="scope">
+    <thead>
+      <tr><th>Фича</th><th>MVP</th><th>Post-MVP</th><th>Примечание</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Бег / слайд / паркур</td><td class="yes">✓ MVP</td><td>—</td><td>Базовая механика</td></tr>
+      <tr><td>Прыжок + double jump</td><td class="yes">✓ MVP</td><td>—</td><td>С wall-jump</td></tr>
+      <tr><td>Дэш (земля + воздух)</td><td class="yes">✓ MVP</td><td>—</td><td>С i-frames</td></tr>
+      <tr><td>Кунай / гарпун</td><td class="yes">✓ MVP</td><td>—</td><td>Стена + враг режим</td></tr>
+      <tr><td>Ближний бой + отскок</td><td class="yes">✓ MVP</td><td>—</td><td>Y-axis система</td></tr>
+      <tr><td>Slam-волна</td><td class="yes">✓ MVP</td><td>—</td><td>AoE по скорости</td></tr>
+      <tr><td>Дымовая бомба</td><td class="yes">✓ MVP</td><td>—</td><td>1 штука</td></tr>
+      <tr><td>Таймер + штрафы</td><td class="yes">✓ MVP</td><td>—</td><td>Полная система</td></tr>
+      <tr><td>Ранг S/A/B/C/D</td><td class="yes">✓ MVP</td><td>—</td><td>По времени</td></tr>
+      <tr><td>Лидерборд</td><td class="yes">✓ MVP</td><td>—</td><td>Локальный минимум</td></tr>
+      <tr><td>3–5 уровней</td><td class="yes">✓ MVP</td><td>—</td><td>Один мир</td></tr>
+      <tr><td>Патруль / лучник / броня</td><td class="yes">✓ MVP</td><td>—</td><td>3 типа врагов</td></tr>
+      <tr><td>Нарратив (диалоги)</td><td class="maybe">~ Минимум</td><td>Расширить</td><td>2–4 реплики</td></tr>
+      <tr><td>Прокачка героя</td><td class="maybe">~ Прототип</td><td>Полная система</td><td>3 апгрейда</td></tr>
+      <tr><td>ИИ-боты на миссии</td><td class="no">Post-MVP</td><td>✓</td><td>Фановый сайд</td></tr>
+      <tr><td>Несколько миров</td><td class="no">Post-MVP</td><td>✓</td><td>После прототипа</td></tr>
+      <tr><td>Боссы</td><td class="no">Post-MVP</td><td>✓</td><td>Мини-босс в Lvl 4</td></tr>
+      <tr><td>Глобальный лидерборд</td><td class="no">Post-MVP</td><td>✓</td><td>Нужен бэкенд</td></tr>
+      <tr><td>Геймпад поддержка</td><td class="no">Post-MVP</td><td>✓</td><td>Unity Input System</td></tr>
+    </tbody>
+  </table>
+
+  <div class="hbox" style="margin-top:40px">
+    <strong>Solo Dev приоритет:</strong> Сначала — одна идеально работающая механика движения. Кунай + double-jump-refresh + отскок от удара должны работать идеально до того, как добавится хоть один уровень. Core feel важнее контента. Тест: можно ли 5 минут кататься по пустой комнате и получать кайф?
+  </div>
+</div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-seal">忍</div>
+    <p>NINJA YAKUZA PIZZA DELIVERY · GDD v0.1 · SOLO DEV · 2025</p>
+    <p style="margin-top:8px">Документ актуален для прототипа. Обновлять по мере разработки.</p>
+  </div>
+</footer>
+
+<script>
+// Cursor
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top = e.clientY + 'px';
+});
+
+// Progress bar
+const progress = document.getElementById('progress');
+document.addEventListener('scroll', () => {
+  const s = document.documentElement;
+  const pct = (s.scrollTop / (s.scrollHeight - s.clientHeight)) * 100;
+  progress.style.height = pct + '%';
+});
+</script>
 </body>
 </html>
